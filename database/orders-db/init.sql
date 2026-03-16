@@ -16,8 +16,8 @@ CREATE TABLE session_statuses (
 );
 
 INSERT INTO session_statuses (code, name, description, sort_order) VALUES
-    ('OPEN',   'Abierta', 'Mesa ocupada con clientes',  1),
-    ('CLOSED', 'Cerrada', 'Mesa libre, sesión terminada', 2);
+    ('OPEN',   'Abierta',  'Mesa ocupada con clientes',    1),
+    ('CLOSED', 'Cerrada',  'Mesa libre, sesión terminada', 2);
 
 CREATE TABLE order_statuses (
     id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -88,28 +88,32 @@ CREATE TABLE table_sessions (
     table_id  UUID        NOT NULL REFERENCES tables(id),
     waiter_id UUID        NOT NULL,      -- referencia lógica a users.id (otro servicio)
     status_id UUID        NOT NULL REFERENCES session_statuses(id),
+    -- is_open se usa exclusivamente para el índice único parcial.
+    -- TRUE mientras la sesión está abierta, NULL cuando se cierra.
+    -- NULL no participa en índices UNIQUE, lo que permite múltiples sesiones cerradas
+    -- por mesa pero solo una abierta a la vez.
+    is_open   BOOLEAN     DEFAULT TRUE,
     opened_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    closed_at TIMESTAMPTZ                -- NULL mientras la sesión está abierta
+    closed_at TIMESTAMPTZ             -- NULL mientras la sesión está abierta
 );
 
 -- Solo puede haber una sesión abierta por mesa a la vez.
--- Índice único parcial: aplica solo cuando el status es OPEN,
--- permitiendo múltiples sesiones cerradas (historial) para la misma mesa.
+-- Cuando se cierra la sesión, is_open se pone en NULL (no FALSE),
+-- porque NULL no participa en restricciones UNIQUE en PostgreSQL.
 CREATE UNIQUE INDEX idx_one_open_session_per_table
-    ON table_sessions(table_id)
-    WHERE status_id = (SELECT id FROM session_statuses WHERE code = 'OPEN');
+    ON table_sessions(table_id, is_open)
+    WHERE is_open = TRUE;
 
 -- ------------------------------------------------------------
 --  Órdenes
 -- ------------------------------------------------------------
 
 CREATE TABLE orders (
-    id        UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
-    session_id UUID          NOT NULL REFERENCES table_sessions(id),
-    waiter_id UUID           NOT NULL,   -- referencia lógica a users.id
-    status_id UUID           NOT NULL REFERENCES order_statuses(id),
-
-    notes     TEXT,
+    id         UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id UUID           NOT NULL REFERENCES table_sessions(id),
+    waiter_id  UUID           NOT NULL,  -- referencia lógica a users.id
+    status_id  UUID           NOT NULL REFERENCES order_statuses(id),
+    notes      TEXT,
 
     -- Desglose fiscal (precios con IVA incluido al 16%)
     -- subtotal   = total / 1.16        (base sin IVA)
@@ -120,8 +124,8 @@ CREATE TABLE orders (
     tax_amount NUMERIC(10, 2) NOT NULL DEFAULT 0,
     total      NUMERIC(10, 2) NOT NULL DEFAULT 0,
 
-    created_at TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ    NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE order_items (
