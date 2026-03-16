@@ -3,6 +3,39 @@
 -- ============================================================
 
 -- ------------------------------------------------------------
+--  Catálogos de estado
+-- ------------------------------------------------------------
+
+CREATE TABLE session_statuses (
+    id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    code        VARCHAR(30) NOT NULL UNIQUE,
+    name        VARCHAR(60) NOT NULL,
+    description TEXT,
+    sort_order  INT         NOT NULL DEFAULT 0,
+    active      BOOLEAN     NOT NULL DEFAULT TRUE
+);
+
+INSERT INTO session_statuses (code, name, description, sort_order) VALUES
+    ('OPEN',   'Abierta', 'Mesa ocupada con clientes',  1),
+    ('CLOSED', 'Cerrada', 'Mesa libre, sesión terminada', 2);
+
+CREATE TABLE order_statuses (
+    id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    code        VARCHAR(30) NOT NULL UNIQUE,
+    name        VARCHAR(60) NOT NULL,
+    description TEXT,
+    color       VARCHAR(7),  -- hex color para la pantalla de cocina
+    sort_order  INT         NOT NULL DEFAULT 0,
+    active      BOOLEAN     NOT NULL DEFAULT TRUE
+);
+
+INSERT INTO order_statuses (code, name, description, color, sort_order) VALUES
+    ('PENDING',     'Pendiente',      'Orden recién creada, esperando cocina', '#6B7280', 1),
+    ('IN_PROGRESS', 'En preparación', 'Cocina tomó la orden',                  '#F59E0B', 2),
+    ('READY',       'Listo',          'Listo para entregar al mesero',          '#10B981', 3),
+    ('DELIVERED',   'Entregado',      'Mesero entregó la orden a la mesa',      '#3B82F6', 4);
+
+-- ------------------------------------------------------------
 --  Menú
 -- ------------------------------------------------------------
 
@@ -50,37 +83,33 @@ CREATE TABLE tables (
     active   BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-CREATE TYPE session_status AS ENUM ('OPEN', 'CLOSED');
-
 CREATE TABLE table_sessions (
-    id        UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
-    table_id  UUID           NOT NULL REFERENCES tables(id),
-    waiter_id UUID           NOT NULL,      -- referencia lógica a users.id (otro servicio)
-    status    session_status NOT NULL DEFAULT 'OPEN',
-    opened_at TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
-    closed_at TIMESTAMPTZ                   -- NULL mientras la sesión está abierta
+    id        UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    table_id  UUID        NOT NULL REFERENCES tables(id),
+    waiter_id UUID        NOT NULL,      -- referencia lógica a users.id (otro servicio)
+    status_id UUID        NOT NULL REFERENCES session_statuses(id),
+    opened_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    closed_at TIMESTAMPTZ                -- NULL mientras la sesión está abierta
 );
 
 -- Solo puede haber una sesión abierta por mesa a la vez.
--- Índice único parcial: aplica solo cuando status = 'OPEN',
+-- Índice único parcial: aplica solo cuando el status es OPEN,
 -- permitiendo múltiples sesiones cerradas (historial) para la misma mesa.
 CREATE UNIQUE INDEX idx_one_open_session_per_table
     ON table_sessions(table_id)
-    WHERE status = 'OPEN';
+    WHERE status_id = (SELECT id FROM session_statuses WHERE code = 'OPEN');
 
 -- ------------------------------------------------------------
 --  Órdenes
 -- ------------------------------------------------------------
 
-CREATE TYPE order_status AS ENUM ('PENDING', 'IN_PROGRESS', 'READY', 'DELIVERED');
-
 CREATE TABLE orders (
-    id         UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
-    session_id UUID           NOT NULL REFERENCES table_sessions(id),
-    waiter_id  UUID           NOT NULL,     -- referencia lógica a users.id
+    id        UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id UUID          NOT NULL REFERENCES table_sessions(id),
+    waiter_id UUID           NOT NULL,   -- referencia lógica a users.id
+    status_id UUID           NOT NULL REFERENCES order_statuses(id),
 
-    status     order_status   NOT NULL DEFAULT 'PENDING',
-    notes      TEXT,
+    notes     TEXT,
 
     -- Desglose fiscal (precios con IVA incluido al 16%)
     -- subtotal   = total / 1.16        (base sin IVA)
@@ -91,8 +120,8 @@ CREATE TABLE orders (
     tax_amount NUMERIC(10, 2) NOT NULL DEFAULT 0,
     total      NUMERIC(10, 2) NOT NULL DEFAULT 0,
 
-    created_at TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ    NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE order_items (
@@ -107,7 +136,7 @@ CREATE TABLE order_items (
 
 -- Índices órdenes
 CREATE INDEX idx_orders_session_id       ON orders(session_id);
-CREATE INDEX idx_orders_status           ON orders(status);
+CREATE INDEX idx_orders_status_id        ON orders(status_id);
 CREATE INDEX idx_order_items_order_id    ON order_items(order_id);
 CREATE INDEX idx_table_sessions_table_id ON table_sessions(table_id);
 

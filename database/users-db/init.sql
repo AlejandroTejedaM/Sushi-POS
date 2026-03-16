@@ -2,14 +2,27 @@
 --  users_db — Servicio NestJS
 -- ============================================================
 
-CREATE TYPE user_role AS ENUM ('ADMIN', 'WAITER', 'KITCHEN');
+CREATE TABLE user_roles
+(
+    id          UUID PRIMARY KEY     DEFAULT gen_random_uuid(),
+    code        VARCHAR(30) NOT NULL UNIQUE,
+    name        VARCHAR(60) NOT NULL,
+    description TEXT,
+    sort_order  INT         NOT NULL DEFAULT 0,
+    active      BOOLEAN     NOT NULL DEFAULT TRUE
+);
+
+INSERT INTO user_roles (code, name, description, sort_order)
+VALUES ('ADMIN', 'Administrador', 'Gestiona menú, mesas y usuarios del sistema', 1),
+       ('WAITER', 'Mesero', 'Toma y gestiona órdenes de las mesas', 2),
+       ('KITCHEN', 'Cocina', 'Ve y actualiza el estado de las órdenes', 3);
 
 CREATE TABLE users (
     id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     full_name     VARCHAR(100) NOT NULL,
     email         VARCHAR(150) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    role          user_role    NOT NULL DEFAULT 'WAITER',
+    role_id UUID NOT NULL REFERENCES user_roles(id),
     active        BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
