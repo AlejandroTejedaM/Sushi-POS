@@ -57,7 +57,7 @@ INSERT INTO users (full_name, email, password_hash, role_id)
 SELECT
     'Administrador',
     'admin@sushipos.com',
-    '$2b$10$placeholderHashCambiarEnProduccion',
+    '$2b$10$ZeyYixp.2.cDn/J.obaHUuNIrsMUe8zMKK4/j/9ULOT5.l8.aQ9eq',
     id
 FROM user_roles
 WHERE code = 'ADMIN';

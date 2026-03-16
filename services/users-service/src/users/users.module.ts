@@ -9,6 +9,7 @@ import { UserRole } from './entities/user-roles.entity';
 @Module({
   imports: [TypeOrmModule.forFeature([RefreshToken, User, UserRole])],
   controllers: [UsersController],
-  providers: [UsersService]
+  providers: [UsersService],
+  exports: [UsersService]
 })
 export class UsersModule {}
