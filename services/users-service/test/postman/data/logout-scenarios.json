@@ -1,0 +1,23 @@
+[
+  {
+    "scenario": "Happy Path",
+    "use_auth": true,
+    "use_refresh": true,
+    "invalid_refresh": false,
+    "expected_status": 200
+  },
+  {
+    "scenario": "Missing Authorization Header",
+    "use_auth": false,
+    "use_refresh": true,
+    "invalid_refresh": false,
+    "expected_status": 404
+  },
+  {
+    "scenario": "Non-existent Refresh Token",
+    "use_auth": true,
+    "use_refresh": true,
+    "invalid_refresh": true,
+    "expected_status": 404
+  }
+]

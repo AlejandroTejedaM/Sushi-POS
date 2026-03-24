@@ -1,0 +1,262 @@
+{
+  "info": {
+    "_postman_id": "2d07ff1d-cb96-4e81-afac-951f33f9fcb6",
+    "name": "users-service",
+    "description": "API tests for the users-service (NestJS). Covers authentication endpoints: login and logout.\n\n## Setup\n1. Set collection variables: `baseUrl`, `email`, `password`\n2. Run `Auth - Login` first to populate `access_token` and `refresh_token`\n3. Use Collection Runner with data files in `/test/postman/data/` for scenario-based testing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const expectedStatus = pm.iterationData.get('expected_status') || 201;",
+                  "const scenario = pm.iterationData.get('scenario') || 'Happy Path';",
+                  "",
+                  "// --- Base envelope (always validated) ---",
+                  "pm.test(`[${scenario}] Response time is under 2000ms`, () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "",
+                  "pm.test(`[${scenario}] Content-Type is application/json`, () => {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test(`[${scenario}] Status code is ${expectedStatus}`, () => {",
+                  "    pm.response.to.have.status(expectedStatus);",
+                  "});",
+                  "",
+                  "pm.test(`[${scenario}] Envelope: has required fields`, () => {",
+                  "    pm.expect(response).to.have.all.keys('success', 'data', 'message', 'timestamp');",
+                  "});",
+                  "",
+                  "pm.test(`[${scenario}] Envelope: message is a non-empty string`, () => {",
+                  "    pm.expect(response.message).to.be.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test(`[${scenario}] Envelope: timestamp is a valid ISO 8601 string`, () => {",
+                  "    pm.expect(response.timestamp).to.match(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$/);",
+                  "});",
+                  "",
+                  "// --- Scenario-specific ---",
+                  "if (expectedStatus === 201) {",
+                  "    pm.test(`[${scenario}] Envelope: success is true`, () => {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "    });",
+                  "",
+                  "    pm.test(`[${scenario}] Envelope: data is an object`, () => {",
+                  "        pm.expect(response.data).to.be.an('object').and.not.null;",
+                  "    });",
+                  "",
+                  "    pm.test(`[${scenario}] Data: access_token is a non-empty string`, () => {",
+                  "        pm.expect(response.data).to.have.property('access_token');",
+                  "        pm.expect(response.data.access_token).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "",
+                  "    pm.test(`[${scenario}] Data: access_token is a valid JWT (3 base64url segments)`, () => {",
+                  "        const parts = response.data.access_token.split('.');",
+                  "        pm.expect(parts).to.have.lengthOf(3);",
+                  "        parts.forEach(part => pm.expect(part).to.match(/^[A-Za-z0-9_-]+$/));",
+                  "    });",
+                  "",
+                  "    pm.test(`[${scenario}] Data: refresh_token is a non-empty string`, () => {",
+                  "        pm.expect(response.data).to.have.property('refresh_token');",
+                  "        pm.expect(response.data.refresh_token).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "",
+                  "    pm.test(`[${scenario}] Data: refresh_token is a valid UUID v4`, () => {",
+                  "        pm.expect(response.data.refresh_token).to.match(",
+                  "            /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i",
+                  "        );",
+                  "    });",
+                  "",
+                  "    pm.collectionVariables.set('access_token', response.data.access_token);",
+                  "    pm.collectionVariables.set('refresh_token', response.data.refresh_token);",
+                  "",
+                  "} else {",
+                  "    pm.test(`[${scenario}] Envelope: success is false`, () => {",
+                  "        pm.expect(response.success).to.be.false;",
+                  "    });",
+                  "",
+                  "    pm.test(`[${scenario}] Envelope: data is null`, () => {",
+                  "        pm.expect(response.data).to.be.null;",
+                  "    });",
+                  "",
+                  "    pm.test(`[${scenario}] Envelope: does not leak sensitive fields`, () => {",
+                  "        pm.expect(response).to.not.have.property('password');",
+                  "        pm.expect(response).to.not.have.property('passwordHash');",
+                  "        pm.expect(response).to.not.have.property('stack');",
+                  "    });",
+                  "",
+                  "    if (expectedStatus === 404 || expectedStatus === 401) {",
+                  "        pm.test(`[${scenario}] Envelope: message does not reveal whether email exists (anti-enumeration)`, () => {",
+                  "            pm.expect(response.message).to.equal('User or password incorrect');",
+                  "        });",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{email}}\",\n    \"password\": \"{{password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "## Purpose\nAuthenticate a user and receive `access_token` + `refresh_token`.\n\n## Data file\nRun with `test/postman/data/login-scenarios.json` in Collection Runner.\n\n## Success response (201)\n```json\n{\n  \"success\": true,\n  \"data\": { \"access_token\": \"<jwt>\", \"refresh_token\": \"<uuid-v4>\" },\n  \"message\": \"Success\",\n  \"timestamp\": \"<iso-8601>\"\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.remove('Authorization');",
+                  "pm.request.headers.remove('x-refresh-token');",
+                  "",
+                  "const useAuth = pm.iterationData.get('use_auth');",
+                  "const useRefresh = pm.iterationData.get('use_refresh');",
+                  "const invalidRefresh = pm.iterationData.get('invalid_refresh');",
+                  "",
+                  "// Default to true when not running with data file",
+                  "const shouldUseAuth = useAuth === undefined ? true : useAuth;",
+                  "const shouldUseRefresh = useRefresh === undefined ? true : useRefresh;",
+                  "",
+                  "if (shouldUseAuth) {",
+                  "    pm.request.headers.add({",
+                  "        key: 'Authorization',",
+                  "        value: `Bearer ${pm.collectionVariables.get('access_token')}`",
+                  "    });",
+                  "}",
+                  "",
+                  "if (shouldUseRefresh) {",
+                  "    const token = invalidRefresh",
+                  "        ? '00000000-0000-4000-a000-000000000000'",
+                  "        : pm.collectionVariables.get('refresh_token');",
+                  "    pm.request.headers.add({",
+                  "        key: 'x-refresh-token',",
+                  "        value: token",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const expectedStatus = pm.iterationData.get('expected_status') || 200;",
+                  "const scenario = pm.iterationData.get('scenario') || 'Happy Path';",
+                  "",
+                  "// --- Base envelope (always validated) ---",
+                  "pm.test(`[${scenario}] Response time is under 2000ms`, () => {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});",
+                  "",
+                  "pm.test(`[${scenario}] Content-Type is application/json`, () => {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test(`[${scenario}] Status code is ${expectedStatus}`, () => {",
+                  "    pm.response.to.have.status(expectedStatus);",
+                  "});",
+                  "",
+                  "pm.test(`[${scenario}] Envelope: has required fields`, () => {",
+                  "    pm.expect(response).to.have.all.keys('success', 'data', 'message', 'timestamp');",
+                  "});",
+                  "",
+                  "pm.test(`[${scenario}] Envelope: message is a non-empty string`, () => {",
+                  "    pm.expect(response.message).to.be.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test(`[${scenario}] Envelope: timestamp is a valid ISO 8601 string`, () => {",
+                  "    pm.expect(response.timestamp).to.match(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$/);",
+                  "});",
+                  "",
+                  "// --- Scenario-specific ---",
+                  "if (expectedStatus === 200) {",
+                  "    pm.test(`[${scenario}] Envelope: success is true`, () => {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "    });",
+                  "",
+                  "    pm.test(`[${scenario}] Envelope: data is null`, () => {",
+                  "        pm.expect(response.data).to.be.null;",
+                  "    });",
+                  "",
+                  "    pm.test(`[${scenario}] Envelope: message is correct`, () => {",
+                  "        pm.expect(response.message).to.equal('Sesión cerrada exitosamente');",
+                  "    });",
+                  "",
+                  "    pm.collectionVariables.set('access_token', '');",
+                  "    pm.collectionVariables.set('refresh_token', '');",
+                  "",
+                  "} else {",
+                  "    pm.test(`[${scenario}] Envelope: success is false`, () => {",
+                  "        pm.expect(response.success).to.be.false;",
+                  "    });",
+                  "",
+                  "    pm.test(`[${scenario}] Envelope: data is null`, () => {",
+                  "        pm.expect(response.data).to.be.null;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "## Purpose\nInvalidate the current session by deleting the refresh token from the database.\n\n## Required headers\n- `Authorization: Bearer {{access_token}}`\n- `x-refresh-token: {{refresh_token}}`\n\n## Data file\nRun with `test/postman/data/logout-scenarios.json` in Collection Runner.\n\n## Success response (200)\n```json\n{\n  \"success\": true,\n  \"data\": null,\n  \"message\": \"Sesión cerrada exitosamente\",\n  \"timestamp\": \"<iso-8601>\"\n}\n```"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001" },
+    { "key": "email", "value": "admin@sushipos.com" },
+    { "key": "password", "value": "admin123" },
+    { "key": "access_token", "value": "" },
+    { "key": "refresh_token", "value": "" }
+  ]
+}

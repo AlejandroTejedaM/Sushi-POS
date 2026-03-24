@@ -1,0 +1,32 @@
+[
+  {
+    "scenario": "Happy Path",
+    "email": "admin@sushipos.com",
+    "password": "admin123",
+    "expected_status": 201
+  },
+  {
+    "scenario": "Wrong Password",
+    "email": "admin@sushipos.com",
+    "password": "wrongpassword",
+    "expected_status": 401
+  },
+  {
+    "scenario": "Non-existent Email",
+    "email": "noexiste@sushipos.com",
+    "password": "admin123",
+    "expected_status": 404
+  },
+  {
+    "scenario": "Invalid Body - Bad Email Format",
+    "email": "not-an-email",
+    "password": "admin123",
+    "expected_status": 400
+  },
+  {
+    "scenario": "Invalid Body - Empty Password",
+    "email": "admin@sushipos.com",
+    "password": "",
+    "expected_status": 400
+  }
+]
