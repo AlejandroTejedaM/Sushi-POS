@@ -12,9 +12,9 @@ NestJS · TypeScript · PostgreSQL · TypeORM · JWT · bcrypt
 |---|---|---|---|
 | POST | /auth/login | Login, returns access + refresh token | Public |
 | POST | /auth/logout | Invalidates refresh token | JWT required |
-| POST | /auth/refresh | Refresh a token | JWT required |
-| POST | /users | Create user | Public | (in progress)
-| GET | /users/:id | Get user by ID | JWT required | (in progress)
+| POST | /auth/refresh | Refresh a token | JWT required (in progress) |
+| POST | /users | Create user | Public (in progress) | 
+| GET | /users/:id | Get user by ID | JWT required (in progress) | 
 
 ## Setup
 ```bash
