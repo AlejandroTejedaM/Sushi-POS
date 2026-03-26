@@ -11,9 +11,10 @@ NestJS · TypeScript · PostgreSQL · TypeORM · JWT · bcrypt
 | Method | Path | Description | Auth |
 |---|---|---|---|
 | POST | /auth/login | Login, returns access + refresh token | Public |
-| POST | /auth/logout | Invalidates refresh token | Public |
-| POST | /users | Create user | Public |
-| GET | /users/:id | Get user by ID | JWT required |
+| POST | /auth/logout | Invalidates refresh token | JWT required |
+| POST | /auth/refresh | Refresh a token | JWT required |
+| POST | /users | Create user | Public | (in progress)
+| GET | /users/:id | Get user by ID | JWT required | (in progress)
 
 ## Setup
 ```bash
@@ -26,6 +27,6 @@ npm run start:dev
 ```
 src/
 ├── auth/           # Login, logout, JWT logic
-├── users/          # User CRUD and refresh token management
+├── users/          # User CRUD and refresh token management (in progress)
 └── common/         # Guards, interceptors, decorators, filters, constants
 ```
