@@ -1,44 +1,55 @@
-# Sushi POS
+# Sushi POS 🍣
 
-Sistema de punto de venta para restaurante de sushi.  
-Arquitectura de microservicios con NestJS y Spring Boot.
+A point-of-sale system for a sushi restaurant, built with a microservices architecture.
 
-## Estructura del proyecto
-
+## Architecture
 ```
 sushi-pos/
 ├── docker-compose.yml
 ├── database/
-│   ├── users-db/
-│   │   └── init.sql        - esquema y seed de users_db
-│   └── orders-db/
-│       └── init.sql        - esquema y seed de orders_db
+│   ├── users-db/       # Schema and seed for authentication database
+│   └── orders-db/      # Schema and seed for orders database
 └── services/
-    ├── users-service/      - NestJS (autenticación y usuarios)
-    └── orders-service/     - Spring Boot (órdenes, menú, mesas)
+    ├── users-service/  # NestJS — authentication & user management
+    └── orders-service/ # Spring Boot — orders, menu & tables (in progress)
 ```
 
-## Requisitos
+## Tech Stack
 
-- Docker Desktop instalado y corriendo
+| Service | Stack |
+|---|---|
+| users-service | NestJS · TypeScript · PostgreSQL · TypeORM · JWT |
+| orders-service | Spring Boot · Java · PostgreSQL (in progress) |
+| Infrastructure | Docker · Docker Compose · PostgreSQL 16 |
 
-## Levantar el entorno de desarrollo
+## Features (users-service)
 
+- User registration and login
+- JWT access token + refresh token rotation
+- Secure logout with token invalidation
+- Bcrypt password hashing
+- Global exception filter with standardized error responses
+- Custom decorators, guards, and interceptors
+
+## Getting Started
+
+**Requirements:** Docker Desktop
 ```bash
-# 1. Clonar el repositorio
-git clone <url-del-repo>
-cd sushi-pos
+# Clone the repository
+git clone https://github.com/AlejandroTejedaM/Sushi-POS.git
+cd Sushi-POS
 
-# 2. Levantar las bases de datos
+# Start the databases
 docker-compose up -d
 
-# 3. Verificar que están corriendo
+# Verify containers are running
 docker-compose ps
 ```
 
-Las bases de datos quedan disponibles en:
-- `users_db`  → localhost:5432
+Databases will be available at:
+- `users_db` → localhost:5432
 - `orders_db` → localhost:5433
 
-El `init.sql` de cada base de datos se ejecuta automáticamente
-la primera vez que se levanta el volumen.
+## Author
+
+Alejandro Tejeda Moreno — [LinkedIn](https://www.linkedin.com/in/alejandro-tejeda-moreno-195967268)
