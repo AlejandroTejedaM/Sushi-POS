@@ -1,10 +1,11 @@
-import { Body, Controller, Post, Headers, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, HttpCode, HttpStatus, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LogInRequestDto } from './dto/request/log-in-request.dto';
 import { AuthResponseDto } from './dto/response/auth-response.dto';
 import { ResponseMessage } from '../common/decorators/response-message.decorator';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { SuccessMessages } from '../common/constants/success-messages';
+import { RefreshTokenGuard } from '../common/guards/refresh-token.guard';
+import type { RefreshTokenRequest } from '../common/interfaces/refresh-token-request.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -16,18 +17,18 @@ export class AuthController {
   }
 
   @Post('logout')
-  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RefreshTokenGuard)
   @ResponseMessage(SuccessMessages.LOGOUT)
-  public async logOut(@Headers('x-refresh-token') token: string): Promise<void> {
-    return await this.authService.logOut(token);
+  public async logOut(@Req() req: RefreshTokenRequest): Promise<void> {
+    return await this.authService.logOut(req.refreshToken.token);
   }
 
   @Post('refresh')
-  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(RefreshTokenGuard)
   @ResponseMessage(SuccessMessages.REFRESH)
-  public async refresh(@Headers('x-refresh-token') token: string): Promise<AuthResponseDto> {
-    return await this.authService.refresh(token);
+  public async refresh(@Req() req: RefreshTokenRequest): Promise<AuthResponseDto> {
+    return await this.authService.refresh(req.refreshToken.token);
   }
 }

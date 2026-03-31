@@ -18,8 +18,9 @@ export class UserRepository {
     return this.repository.find(options);
   }
 
-  public save(entity: DeepPartial<User>): Promise<User> {
-    return this.repository.save(entity);
+  public create(entity: DeepPartial<User>): Promise<User> {
+    const newEntity: User = this.repository.create(entity);
+    return this.repository.save(newEntity);
   }
 
   public delete(options: FindOptionsWhere<User>): Promise<DeleteResult> {

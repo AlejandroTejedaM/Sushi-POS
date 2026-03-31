@@ -25,8 +25,7 @@ export class AuthService {
     if (!passwordMatch) {
       throw new UnauthorizedException(ERROR_MESSAGES.USER_OR_PASSWORD_INCORRECT, ERROR_CODES.USER_OR_PASSWORD_INCORRECT);
     }
-    const payload: JwtAuthInterface = { sub: user.id };
-    const accessToken: string = this.jwtService.sign(payload);
+    const accessToken: string = this.generateJwtAccessToken(user);
     await this.userService.deleteRefreshTokenByUserId(user.id);
     const refreshToken: RefreshToken = await this.userService.createRefreshToken(user.id);
     return {
@@ -47,16 +46,20 @@ export class AuthService {
   public async refresh(token: string): Promise<AuthResponseDto> {
     const refreshToken: RefreshToken | null = await this.userService.getRefreshToken(token);
     if (!refreshToken) {
-      throw new NotFoundException(ERROR_MESSAGES.TOKEN_NOT_FOUND);
+      throw new NotFoundException(ERROR_MESSAGES.TOKEN_NOT_FOUND, ERROR_CODES.TOKEN_NOT_FOUND);
     }
     const user: User = refreshToken.user;
-    const payload: JwtAuthInterface = { sub: user.id };
-    const accessToken: string = this.jwtService.sign(payload);
     await this.userService.deleteRefreshTokenByUserId(user.id);
+    const accessToken: string = this.generateJwtAccessToken(user);
     const newRefreshToken: RefreshToken = await this.userService.createRefreshToken(user.id);
     return {
       refresh_token: newRefreshToken.token,
       access_token: accessToken
     };
+  }
+
+  private generateJwtAccessToken(user: User): string {
+    const payload: JwtAuthInterface = { sub: user.id, role: user.userRole.code };
+    return this.jwtService.sign(payload);
   }
 }
