@@ -40,7 +40,7 @@ git clone https://github.com/AlejandroTejedaM/Sushi-POS.git
 cd Sushi-POS
 
 # Start the databases
-docker-compose up -d
+docker-compose up
 
 # Verify containers are running
 docker-compose ps

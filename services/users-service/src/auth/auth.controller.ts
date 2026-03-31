@@ -22,4 +22,12 @@ export class AuthController {
   public async logOut(@Headers('x-refresh-token') token: string): Promise<void> {
     return await this.authService.logOut(token);
   }
+
+  @Post('refresh')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.CREATED)
+  @ResponseMessage(SuccessMessages.REFRESH)
+  public async refresh(@Headers('x-refresh-token') token: string): Promise<AuthResponseDto> {
+    return await this.authService.refresh(token);
+  }
 }

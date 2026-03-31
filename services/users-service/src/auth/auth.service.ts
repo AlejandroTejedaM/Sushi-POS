@@ -35,12 +35,28 @@ export class AuthService {
     };
   }
 
-  public async logOut(token: string) {
+  public async logOut(token: string): Promise<void> {
     const refreshToken: RefreshToken | null = await this.userService.getRefreshToken(token);
     if (!refreshToken) {
       throw new NotFoundException(ERROR_MESSAGES.TOKEN_NOT_FOUND);
     }
 
     await this.userService.deleteRefreshTokenByUserId(refreshToken.user.id);
+  }
+
+  public async refresh(token: string): Promise<AuthResponseDto> {
+    const refreshToken: RefreshToken | null = await this.userService.getRefreshToken(token);
+    if (!refreshToken) {
+      throw new NotFoundException(ERROR_MESSAGES.TOKEN_NOT_FOUND);
+    }
+    const user: User = refreshToken.user;
+    const payload: JwtAuthInterface = { sub: user.id };
+    const accessToken: string = this.jwtService.sign(payload);
+    await this.userService.deleteRefreshTokenByUserId(user.id);
+    const newRefreshToken: RefreshToken = await this.userService.createRefreshToken(user.id);
+    return {
+      refresh_token: newRefreshToken.token,
+      access_token: accessToken
+    };
   }
 }
