@@ -38,7 +38,7 @@ export class AuthService {
   public async logOut(token: string): Promise<void> {
     const refreshToken: RefreshToken | null = await this.userService.getRefreshToken(token);
     if (!refreshToken) {
-      throw new NotFoundException(ERROR_MESSAGES.TOKEN_NOT_FOUND);
+      throw new NotFoundException(ERROR_MESSAGES.TOKEN_NOT_FOUND, ERROR_CODES.TOKEN_NOT_FOUND);
     }
 
     await this.userService.deleteRefreshTokenByUserId(refreshToken.user.id);
